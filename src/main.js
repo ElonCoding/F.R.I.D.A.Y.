@@ -1,5 +1,10 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
+
+// Disable GPU acceleration to prevent crashes
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
 const { VoiceRecognitionService } = require('./services/voiceRecognition');
 const { AIAssistant } = require('./services/aiAssistant');
 const { EmotionDetectionService } = require('./services/emotionDetection');
@@ -57,6 +62,20 @@ class HolographicAIAssistant {
 
         await this.mainWindow.loadFile('src/ui/index.html');
         this.mainWindow.setIgnoreMouseEvents(false);
+        
+        // Set up IPC handlers after window is created
+        this.setupIpcHandlers();
+    }
+    
+    setupIpcHandlers() {
+        // IPC handlers
+        ipcMain.handle('get-system-status', () => {
+            return this.getSystemStatus();
+        });
+
+        ipcMain.handle('toggle-listening', () => {
+            this.toggleListening();
+        });
     }
 
     async initializeServices() {
@@ -93,15 +112,6 @@ class HolographicAIAssistant {
         // Emotion detection events
         this.services.emotion.on('emotionDetected', (emotion) => {
             this.handleEmotionChange(emotion);
-        });
-
-        // IPC handlers
-        ipcMain.handle('get-system-status', () => {
-            return this.getSystemStatus();
-        });
-
-        ipcMain.handle('toggle-listening', () => {
-            this.toggleListening();
         });
 
         app.on('window-all-closed', () => {

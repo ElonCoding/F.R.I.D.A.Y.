@@ -604,6 +604,103 @@ class MultiAgentCoordinator extends EventEmitter {
         ).length;
     }
     
+    async initialize(services) {
+        console.log('Initializing MultiAgentCoordinator...');
+        
+        // Store reference to all services
+        this.services = services;
+        
+        // Register available agents based on services
+        const availableAgents = [
+            'security', 'face', 'voice', 'emotion', 
+            'automation', 'smart_home', 'reasoning', 'planning'
+        ];
+        
+        for (const agentType of availableAgents) {
+            if (services[agentType]) {
+                try {
+                    this.registerAgent(agentType, services[agentType]);
+                    console.log(`Registered ${agentType} agent`);
+                } catch (error) {
+                    console.error(`Failed to register ${agentType} agent:`, error);
+                }
+            }
+        }
+        
+        // Set up service event listeners
+        this.setupServiceListeners();
+        
+        // Create reasoning and planning agents
+        this.createReasoningAgent();
+        this.createPlanningAgent();
+        
+        console.log('MultiAgentCoordinator initialized successfully');
+        this.emit('coordinator_initialized');
+    }
+    
+    setupServiceListeners() {
+        // Listen for service status changes
+        if (this.services.security) {
+            this.services.security.on('security_alert', (alert) => {
+                this.handleSecurityAlert(alert);
+            });
+        }
+        
+        if (this.services.emotion) {
+            this.services.emotion.on('emotion_changed', (emotionData) => {
+                this.systemState.userEmotion = emotionData.dominantEmotion;
+            });
+        }
+        
+        if (this.services.face) {
+            this.services.face.on('user_detected', (userData) => {
+                this.handleUserDetection(userData);
+            });
+        }
+    }
+    
+    handleSecurityAlert(alert) {
+        console.log('Security alert received:', alert);
+        
+        if (alert.level === 'high') {
+            // Immediately process security tasks
+            const securityTask = {
+                id: this.generateTaskId(),
+                type: 'security',
+                priority: this.taskPriorities.security,
+                input: `Security alert: ${alert.message}`,
+                context: { alert: alert },
+                plan: {
+                    steps: [{
+                        agent: 'security',
+                        action: 'handle_alert',
+                        parameters: { alert: alert }
+                    }]
+                },
+                status: 'pending',
+                created: new Date(),
+                timeout: 10000
+            };
+            
+            this.addTask(securityTask);
+        }
+    }
+    
+    handleUserDetection(userData) {
+        console.log('User detection event:', userData);
+        
+        // Update authorization level based on user recognition
+        if (userData.recognized) {
+            this.systemState.authorizationLevel = userData.authorizationLevel || 'user';
+        } else {
+            this.systemState.authorizationLevel = 'guest';
+        }
+    }
+    
+    generateTaskId() {
+        return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    
     getSystemStatus() {
         return {
             activeTasks: this.getActiveTaskCount(),
@@ -612,6 +709,35 @@ class MultiAgentCoordinator extends EventEmitter {
             systemState: this.systemState,
             performanceMetrics: this.systemState.performanceMetrics
         };
+    }
+    
+    getServiceStatus() {
+        return {
+            coordinator: {
+                active: true,
+                agents: Array.from(this.agents.keys()),
+                activeTasks: this.getActiveTaskCount(),
+                queuedTasks: this.taskQueue.length
+            },
+            services: {
+                security: this.services.security ? this.services.security.getStatus() : { active: false },
+                face: this.services.face ? this.services.face.getStatus() : { active: false },
+                voice: this.services.voice ? this.services.voice.getStatus() : { active: false },
+                emotion: this.services.emotion ? this.services.emotion.getStatus() : { active: false },
+                automation: this.services.automation ? this.services.automation.getStatus() : { active: false },
+                smartHome: this.services.smartHome ? this.services.smartHome.getStatus() : { active: false }
+            }
+        };
+    }
+    
+    getRecentCommands() {
+        return Array.from(this.taskResults.entries())
+            .slice(-5)
+            .map(([taskId, result]) => ({
+                taskId,
+                success: result.success,
+                timestamp: result.timestamp || new Date()
+            }));
     }
     
     generateTaskId() {
@@ -648,42 +774,7 @@ class MultiAgentCoordinator extends EventEmitter {
         return 'unknown';
     }
     
-    async initialize(services) {
-        try {
-            console.log('Initializing Multi-Agent Coordinator...');
-            
-            // Register available agents
-            if (services.security) {
-                this.registerAgent('security', services.security);
-            }
-            if (services.emotion) {
-                this.registerAgent('emotion', services.emotion);
-            }
-            if (services.voice) {
-                this.registerAgent('voice', services.voice);
-            }
-            if (services.face) {
-                this.registerAgent('face', services.face);
-            }
-            if (services.automation) {
-                this.registerAgent('os_control', services.automation);
-            }
-            if (services.smartHome) {
-                this.registerAgent('smart_home', services.smartHome);
-            }
-            
-            // Create reasoning and planning agents (these would be separate services in a real implementation)
-            this.createReasoningAgent();
-            this.createPlanningAgent();
-            
-            console.log('Multi-Agent Coordinator initialized successfully');
-            this.emit('initialized');
-            
-        } catch (error) {
-            console.error('Failed to initialize Multi-Agent Coordinator:', error);
-            throw error;
-        }
-    }
+
     
     createReasoningAgent() {
         // Simple reasoning agent for simulation

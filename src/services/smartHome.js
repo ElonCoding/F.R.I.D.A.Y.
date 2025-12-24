@@ -448,6 +448,18 @@ class SmartHomeService extends EventEmitter {
         }
         return total;
     }
+    
+    getStatus() {
+        return {
+            active: this.isConnected,
+            simulationMode: this.simulationMode,
+            devices: this.devices.size,
+            protocols: this.protocols.size,
+            automationRules: this.automationRules.size,
+            energyConsumption: this.getTotalEnergyConsumption(),
+            presenceLocations: this.presenceDetection.size
+        };
+    }
 
     scheduleReconnect() {
         if (this.currentRetry < this.maxRetries) {

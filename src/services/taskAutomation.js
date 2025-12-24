@@ -667,6 +667,18 @@ class TaskAutomationService extends EventEmitter {
     getScheduledTasks() {
         return Array.from(this.scheduledTasks.values());
     }
+    
+    getStatus() {
+        return {
+            active: true,
+            platform: this.platform,
+            automationScripts: this.automationScripts.size,
+            workflowTemplates: this.workflowTemplates.size,
+            runningProcesses: this.runningProcesses.size,
+            scheduledTasks: this.scheduledTasks.size,
+            lockedCapabilities: this.lockedCapabilities
+        };
+    }
 
     destroy() {
         // Terminate all running processes

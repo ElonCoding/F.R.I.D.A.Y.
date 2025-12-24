@@ -628,6 +628,17 @@ class SecurityManager extends EventEmitter {
         this.securityPolicies.clear();
         this.accessControl.clear();
     }
+    
+    getStatus() {
+        return {
+            active: true,
+            threatLevel: this.threatDetection.currentThreatLevel || 'low',
+            authorizationLevel: this.authorizationLevel,
+            failedAttempts: this.failedAttempts,
+            locked: this.isLocked(),
+            encryptionEnabled: this.encryptionKeys.size > 0
+        };
+    }
 }
 
 class ThreatDetectionSystem extends EventEmitter {

@@ -269,6 +269,18 @@ class EmotionDetectionService extends EventEmitter {
             return { trend: 'stable', confidence: 0.8 };
         }
     }
+    
+    getStatus() {
+        return {
+            active: true,
+            monitoring: this.isMonitoring,
+            simulationMode: this.simulationMode,
+            currentEmotion: this.currentEmotion,
+            emotionHistory: this.emotionHistory.length,
+            voicePatterns: this.voicePatterns.size,
+            facialExpressions: this.facialExpressions.size
+        };
+    }
 
     destroy() {
         this.stopMonitoring();

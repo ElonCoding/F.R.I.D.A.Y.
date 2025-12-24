@@ -230,6 +230,17 @@ class FaceRecognitionService extends EventEmitter {
         };
     }
     
+    getStatus() {
+        return {
+            active: true,
+            monitoring: this.isMonitoring,
+            simulationMode: this.simulationMode,
+            authorizedUsers: this.authorizedUsers.size,
+            recognizedUsers: this.recognizedUsers.size,
+            lastRecognition: this.lastSeenTime
+        };
+    }
+    
     destroy() {
         this.stopMonitoring();
         this.removeAllListeners();
