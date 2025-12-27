@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import Hologram from './components/Hologram';
+import FloatingOrb from './components/FloatingOrb';
 
 function App() {
   const [status, setStatus] = useState('locked'); // locked, idle, listening, thinking, speaking
   const [emotion, setEmotion] = useState('neutral');
   const [messages, setMessages] = useState([]);
   const [ws, setWs] = useState(null);
+  const [isElectron] = useState(() => !!window.electronAPI);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Listen for Electron window state changes
+  useEffect(() => {
+    if (window.electronAPI) {
+      window.electronAPI.getWindowState().then(setIsExpanded);
+      window.electronAPI.onWindowStateChanged(setIsExpanded);
+      return () => window.electronAPI.removeWindowStateListener();
+    }
+  }, []);
 
   useEffect(() => {
     let socket;
@@ -93,8 +105,17 @@ function App() {
     setMessages((prev) => [...prev.slice(-4), msg]); // Keep last 5
   };
 
+  // If running in Electron and collapsed, show only the floating orb
+  if (isElectron && !isExpanded) {
+    return (
+      <div className="floating-app flex items-center justify-center w-screen h-screen">
+        <FloatingOrb status={status} emotion={emotion} />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center w-screen h-screen bg-black text-holo-100 overflow-hidden relative">
+    <div className={`flex flex-col items-center justify-center w-screen h-screen ${isElectron ? 'floating-app expanded' : 'bg-black'} text-holo-100 overflow-hidden relative`}>
 
       {/* Background Grid/Effect */}
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
